@@ -2,7 +2,7 @@
 
 This is a port of the classic DOOM (1993) for wearable android device.
 
-**Currently only tested with freedoom phase 1**
+**Currently only tested with shareware doom and freedoom phase 1**
 
 If you want to try a different version (such as shareware version of DOOM you can find for free: *doom1.wad*) please replace with your own WAD file (game data) in the /assets folder.
 
