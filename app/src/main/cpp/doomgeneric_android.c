@@ -39,13 +39,13 @@ static void addKeyToQueue(int pressed, unsigned char key)
 static void VirtualButton(int x, int y, int id, unsigned char keycode)
 {
     static bool pressed[3] = { false, false, false };
-    int lw = x + 200;
-    int lh = y + 200;
+    int lw = x + 150;
+    int lh = y + 150;
 
     if (pressed[id])
-        RenderCircle(x, y, 100, 0x4c4c4cff);
+        RenderCircle(x, y, 50, 0x4c4c4cff);
     else
-        RenderCircle(x, y, 100, 0x808080ff);
+        RenderCircle(x, y, 50, 0x808080ff);
 
     int idx;
     if (pointer_touched_in(x, y, lw, lh, &idx) && !pressed[id])
@@ -60,6 +60,84 @@ static void VirtualButton(int x, int y, int id, unsigned char keycode)
     }
 }
 
+static bool pointer_touched_within_x_bound(int x, bool less, int *id) {
+    bool touched = false;
+    for (int i = 0; i < 8; ++i)
+    {
+        if (less) {
+            touched = (x > button_x[i] && button_x[i] > 0);
+        }
+        else {
+            touched = (x < button_x[i] && button_x[i] > 0);
+        }
+        *id = i;
+        if (touched) break;
+    }
+    return touched;
+}
+
+static bool pointer_touched_within_y_bound(int y, bool less, int *id) {
+    bool touched = false;
+    for (int i = 0; i < 8; ++i)
+    {
+        if (less) {
+            touched = (y > button_y[i] && button_y[i] > 0);
+        }
+        else {
+            touched = (y < button_y[i] && button_y[i] > 0);
+        }
+        *id = i;
+        if (touched) break;
+    }
+    return touched;
+}
+
+static void Movement(void) {
+    static bool forward = false;
+    static bool backward = false;
+    static bool left = false;
+    static bool right = false;
+    static bool less = true;
+    static bool greater = false;
+    int id1;
+    int id2;
+    int id3;
+    int id4;
+
+    if (pointer_touched_within_x_bound(100, less, &id1)) {
+        addKeyToQueue(1, KEY_LEFTARROW);
+        left = true;
+    }
+    else {
+        addKeyToQueue(0, KEY_LEFTARROW);
+        left = false;
+    }
+    if (pointer_touched_within_x_bound(340, greater, &id2)) {
+        addKeyToQueue(1, KEY_RIGHTARROW);
+        right = true;
+    }
+    else {
+        addKeyToQueue(0, KEY_RIGHTARROW);
+        right = false;
+    }
+    if (pointer_touched_within_y_bound(100, less, &id3)) {
+        addKeyToQueue(1, KEY_UPARROW);
+        forward = true;
+    }
+    else {
+        addKeyToQueue(0, KEY_UPARROW);
+        forward = false;
+    }
+    if (pointer_touched_within_y_bound(325, greater, &id4)) {
+        addKeyToQueue(1, KEY_DOWNARROW);
+        backward = true;
+    }
+    else {
+        addKeyToQueue(0, KEY_DOWNARROW);
+        backward = false;
+    }
+}
+
 static void VirtualJoystick(void)
 {
     // make center of joystick do nothing
@@ -67,7 +145,7 @@ static void VirtualJoystick(void)
     static bool backward = false;
     static bool left = false;
     static bool right = false;
-    RenderCircle(screen_x / 18, screen_y - 300, 100, 0x4c4c4cff);
+    RenderCircle(-50, screen_y - 200, 100, 0x4c4c4cff);
     int id;
     if (pointer_touched_in(screen_x/18, screen_y-300, screen_x/18+200, screen_y-100, &id))
     {
@@ -149,7 +227,7 @@ void DG_DrawFrame(void)
     ClearFrame();
     RenderImage(DG_ScreenBuffer, 0,
                 0, 320, 200);
-    VirtualJoystick();
+    Movement();
 
     if (menuactive)
         VirtualButton(screen_x-200, screen_y-200, 0, KEY_ENTER);

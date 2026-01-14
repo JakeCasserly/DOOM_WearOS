@@ -222,47 +222,149 @@ void RenderImage(uint32_t *data, int x, int y, int w, int h)
     if (w <= 0 || h <= 0) return;
 
     glUseProgram(imageProgram);
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-    // xfrm maps the vertex coordinates (0 to screen_width) to OpenGL NDC (-1 to 1)
-    // To fill the screen, we want the image to start at -1, 1 and span the whole width/height
-    glUniform4f(imageProgramUX, 2.0f / lastWidthResize, -2.0f / lastHeightResize, -1.0f, 1.0f);
+    // Calculate aspect ratio preserving scale
+    float screenAspect = (float)lastWidthResize / (float)lastHeightResize;
+    float gameAspect = 320.0f / 200.0f;
+    float shrink = 0.35f;
+    float scaleX, scaleY;
+
+    if (screenAspect > gameAspect) {
+        scaleY = shrink;
+        scaleX = (gameAspect / screenAspect) * shrink;
+    } else {
+        scaleX = shrink;
+        scaleY = (screenAspect / gameAspect) * shrink;
+    }
+
+    glUniform4f(imageProgramUX, scaleX, -scaleY, 0.0f, 0.0f);
     glUniform1i(imageProgramUT, 0);
 
+    // Setup texture
     glBindTexture(GL_TEXTURE_2D, imageProgramTex);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    // Use GL_LINEAR for a smoother look on the watch, or GL_NEAREST for pixel art
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 
-    // This uploads the 320x200 Doom buffer
+    // Upload texture data
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
 
-    // Vertices defined to span the entire logical size (which we scale via xfrm above)
-    // We use lastWidthResize/Height to ensure the triangles cover the 454x454 area
-    float fw = (float)lastWidthResize;
-    float fh = (float)lastHeightResize;
-
+    // Vertices in NDC space (-1 to 1)
     const float verts[] = {
-            0.0f, 0.0f,  fw,   0.0f,  fw,   fh,
-            0.0f, 0.0f,  fw,   fh,    0.0f, fh
+            -1.0f, -1.0f, 0.0f,  // Bottom Left
+            1.0f, -1.0f, 0.0f,  // Bottom Right
+            1.0f,  1.0f, 0.0f,  // Top Right
+
+            -1.0f, -1.0f, 0.0f,  // Bottom Left
+            1.0f,  1.0f, 0.0f,  // Top Right
+            -1.0f,  1.0f, 0.0f   // Top Left
     };
 
-    // Texcoords (0.0 to 1.0) mapping the 320x200 texture to the triangles
+    // Texture coordinates (FIXED - now matches vertex order)
     const float tc[] = {
-            0.0f, 0.0f,  1.0f, 0.0f,  1.0f, 1.0f,
-            0.0f, 0.0f,  1.0f, 1.0f,  0.0f, 1.0f
+            0.0f, 0.0f,  // Bottom Left (now using top of texture)
+            1.0f, 0.0f,  // Bottom Right (now using top of texture)
+            1.0f, 1.0f,  // Top Right (now using bottom of texture)
+
+            0.0f, 0.0f,  // Bottom Left
+            1.0f, 1.0f,  // Top Right
+            0.0f, 1.0f   // Top Left (now using bottom of texture)
     };
 
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts);
     glEnableVertexAttribArray(0);
 
-    // Note: Use a float pointer for texture coordinates if your shader expects a1 as vec2
     glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tc);
     glEnableVertexAttribArray(1);
 
     glDrawArrays(GL_TRIANGLES, 0, 6);
+//    if (w <= 0 || h <= 0) return;
+//
+//    glUseProgram(imageProgram);
+//
+//    glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
+//
+//    // xfrm maps the vertex coordinates (0 to screen_width) to OpenGL NDC (-1 to 1)
+//    // To fill the screen, we want the image to start at -1, 1 and span the whole width/height
+//    float screenAspect = (float)lastWidthResize / (float)lastHeightResize;
+//    float gameAspect = 320.0f / 200.0f;
+//    float shrink = 0.35f; // Adjust to fit your watch face
+//    float scaleX, scaleY;
+//
+//    if (screenAspect > gameAspect) {
+//        scaleY = shrink;
+//        scaleX = (gameAspect / screenAspect) * shrink;
+//    } else {
+//        scaleX = shrink;
+//        scaleY = (screenAspect / gameAspect) * shrink;
+//    }
+//
+//    // 3. SET THE UNIFORM (Centers the image)
+//    glUseProgram(imageProgram);
+//    glUniform4f(imageProgramUX, scaleX, -scaleY, 0.0f, 0.0f);
+////    glUniform4f(imageProgramUX, 2.0f / lastWidthResize, -2.0f / lastHeightResize, -1.0f, 1.0f);
+//    glUniform1i(imageProgramUT, 0);
+//
+//    glBindTexture(GL_TEXTURE_2D, imageProgramTex);
+//
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+//    // Use GL_LINEAR for a smoother look on the watch, or GL_NEAREST for pixel art
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+//    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+//
+//    // This uploads the 320x200 Doom buffer
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+//
+//    // Vertices defined to span the entire logical size (which we scale via xfrm above)
+//    // We use lastWidthResize/Height to ensure the triangles cover the 454x454 area
+//    float fw = (float)lastWidthResize;
+//    float fh = (float)lastHeightResize;
+//
+////    const float verts[] = {
+////            0.0f, 0.0f,  fw,   0.0f,  fw,   fh,
+////            0.0f, 0.0f,  fw,   fh,    0.0f, fh
+////    };
+//        const float verts[] = {
+//                // x,    y,    z
+//                -1.0f, -1.0f,  0.0f, // Bottom Left
+//                1.0f, -1.0f,  0.0f, // Bottom Right
+//                -1.0f,  1.0f,  0.0f, // Top Left
+//
+//                -1.0f,  1.0f,  0.0f, // Top Left
+//                1.0f, -1.0f,  0.0f, // Bottom Right
+//                1.0f,  1.0f,  0.0f  // Top Right
+//        };
+//
+//    // Texcoords (0.0 to 1.0) mapping the 320x200 texture to the triangles
+////    const float tc[] = {
+////            0.0f, 0.0f,  1.0f, 0.0f,  1.0f, 1.0f,
+////            0.0f, 0.0f,  1.0f, 1.0f,  0.0f, 1.0f
+////    };
+//
+//    // 5. TEXTURE COORDS (Matching the vertex order above)
+//    const float tc[] = {
+//            0.0f, 0.0f,  // Top Left
+//            0.0f, 1.0f,  // Bottom Left
+//            1.0f, 0.0f,  // Top Right
+//            1.0f, 1.0f   // Bottom Right
+//    };
+//
+//
+////    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, verts);
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, verts);
+//    glEnableVertexAttribArray(0);
+//
+//    // Note: Use a float pointer for texture coordinates if your shader expects a1 as vec2
+//    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, tc);
+//    glEnableVertexAttribArray(1);
+//
+//    //glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 320, 200, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+//
+//    glDrawArrays(GL_TRIANGLES, 0, 6);
+////    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 }
 
 void ClearFrame(void)
