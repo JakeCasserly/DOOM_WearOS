@@ -17,14 +17,18 @@ static unsigned int s_KeyQueueReadIndex = 0;
 
 static bool pointer_touched_in(int x, int y, int x2, int y2, int *id)
 {
-    bool touched = false;
     for (int i = 0; i < 8; ++i)
     {
-        touched = (x < button_x[i] && button_x[i] < x2) && (y < button_y[i] && button_y[i] < y2);
-        *id = i;
-        if (touched) break;
+        if (!button_down[i]) continue;  // Skip inactive touches
+
+        // Check if this touch is within the bounds
+        if ((x < button_x[i] && button_x[i] < x2) && (y < button_y[i] && button_y[i] < y2))
+        {
+            *id = i;
+            return true;  // Found a touch in this area
+        }
     }
-    return touched;
+    return false;  // No touch found in this area
 }
 
 static void addKeyToQueue(int pressed, unsigned char key)
@@ -36,34 +40,38 @@ static void addKeyToQueue(int pressed, unsigned char key)
     s_KeyQueueWriteIndex %= KEYQUEUE_SIZE;
 }
 
-static void VirtualButton(int x, int y, int id, unsigned char keycode)
+static void VirtualButton(int x, int y, int button_id, unsigned char keycode)
 {
     static bool pressed[3] = { false, false, false };
-    int lw = x + 150;
-    int lh = y + 150;
+    int lw = x + 100;
+    int lh = y + 100;
 
-    if (pressed[id])
+    int touch_id;
+    bool is_touching = pointer_touched_in(x, y, lw, lh, &touch_id);
+
+    // Only send events on state CHANGE
+    if (is_touching && !pressed[button_id]) {
+        addKeyToQueue(1, keycode);
+        pressed[button_id] = true;
+    }
+    else if (!is_touching && pressed[button_id]) {
+        addKeyToQueue(0, keycode);
+        pressed[button_id] = false;
+    }
+
+    if (pressed[button_id])
         RenderCircle(x, y, 50, 0x4c4c4cff);
     else
         RenderCircle(x, y, 50, 0x808080ff);
-
-    int idx;
-    if (pointer_touched_in(x, y, lw, lh, &idx) && !pressed[id])
-    {
-        addKeyToQueue(1, keycode);
-        pressed[id] = true;
-    }
-    else if (!pointer_touched_in(x, y, lw, lh, &idx) && pressed[id])
-    {
-        addKeyToQueue(0, keycode);
-        pressed[id] = false;
-    }
 }
 
 static bool pointer_touched_within_x_bound(int x, bool less, int *id) {
     bool touched = false;
     for (int i = 0; i < 8; ++i)
     {
+        // Only check touches that are actually active
+        if (!button_down[i]) continue;
+
         if (less) {
             touched = (x > button_x[i] && button_x[i] > 0);
         }
@@ -80,6 +88,9 @@ static bool pointer_touched_within_y_bound(int y, bool less, int *id) {
     bool touched = false;
     for (int i = 0; i < 8; ++i)
     {
+        // Only check touches that are actually active
+        if (!button_down[i]) continue;
+
         if (less) {
             touched = (y > button_y[i] && button_y[i] > 0);
         }
@@ -97,50 +108,38 @@ static void Movement(void) {
     static bool backward = false;
     static bool left = false;
     static bool right = false;
-    static bool less = true;
-    static bool greater = false;
-    int id1;
-    int id2;
-    int id3;
-    int id4;
 
-    if (pointer_touched_within_x_bound(100, less, &id1)) {
-        addKeyToQueue(1, KEY_LEFTARROW);
-        left = true;
+    int id1, id2, id3, id4;
+
+    if (pointer_touched_within_x_bound(100, true, &id1)) {
+        if (!left) { addKeyToQueue(1, KEY_LEFTARROW); left = true; }
+    } else {
+        if (left) { addKeyToQueue(0, KEY_LEFTARROW); left = false; }
     }
-    else {
-        addKeyToQueue(0, KEY_LEFTARROW);
-        left = false;
+
+    if (pointer_touched_within_x_bound(340, false, &id2)) {
+        if (!right) { addKeyToQueue(1, KEY_RIGHTARROW); right = true; }
+    } else {
+        if (right) { addKeyToQueue(0, KEY_RIGHTARROW); right = false; }
     }
-    if (pointer_touched_within_x_bound(340, greater, &id2)) {
-        addKeyToQueue(1, KEY_RIGHTARROW);
-        right = true;
+
+    if (pointer_touched_within_y_bound(100, true, &id3)) {
+        if (!forward) { addKeyToQueue(1, KEY_UPARROW); forward = true; }
+    } else {
+        if (forward) { addKeyToQueue(0, KEY_UPARROW); forward = false; }
     }
-    else {
-        addKeyToQueue(0, KEY_RIGHTARROW);
-        right = false;
-    }
-    if (pointer_touched_within_y_bound(100, less, &id3)) {
-        addKeyToQueue(1, KEY_UPARROW);
-        forward = true;
-    }
-    else {
-        addKeyToQueue(0, KEY_UPARROW);
-        forward = false;
-    }
-    if (pointer_touched_within_y_bound(325, greater, &id4)) {
-        addKeyToQueue(1, KEY_DOWNARROW);
-        backward = true;
-    }
-    else {
-        addKeyToQueue(0, KEY_DOWNARROW);
-        backward = false;
+
+    if (pointer_touched_within_y_bound(325, false, &id4)) {
+        if (!backward) { addKeyToQueue(1, KEY_DOWNARROW); backward = true; }
+    } else {
+        if (backward) { addKeyToQueue(0, KEY_DOWNARROW); backward = false; }
     }
 }
 
 static void VirtualJoystick(void)
 {
     // make center of joystick do nothing
+    // https://apply.joinpatch.org/referral
     static bool forward = false;
     static bool backward = false;
     static bool left = false;
@@ -220,6 +219,9 @@ static void VirtualJoystick(void)
 void DG_Init(void)
 {
     GetScreenDimensions(&screen_x, &screen_y);
+    printf("Screen: %dx%d\n", screen_x, screen_y);
+    printf("Fire button at: %d,%d\n", screen_x-200, screen_y-320);
+    printf("Movement bounds: x<100, x>340, y<100, y>325\n");
 }
 
 void DG_DrawFrame(void)
@@ -229,12 +231,12 @@ void DG_DrawFrame(void)
                 0, 320, 200);
     Movement();
 
-    if (menuactive)
-        VirtualButton(screen_x-200, screen_y-200, 0, KEY_ENTER);
-    else
-        VirtualButton(screen_x-200, screen_y-320, 0, KEY_FIRE);
+    // if (menuactive)
+        VirtualButton(screen_x-200, screen_y-225, 0, KEY_ENTER);
+    //else
+        VirtualButton(screen_x-200, screen_y-320, 1, KEY_FIRE);
 
-    VirtualButton(screen_x-275, screen_y-300, 1, KEY_USE);
+    VirtualButton(screen_x-400, screen_y-300, 2, KEY_USE);
     //VirtualButton(screen_x-55, screen_y-100, 2, KEY_ESCAPE);
     HandleInput();
     SwapBuffers();
