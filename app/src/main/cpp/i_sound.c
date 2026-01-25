@@ -77,7 +77,7 @@ static music_module_t *music_modules[] = {
 #ifdef FEATURE_SOUND
         &music_sdl_module,
 #endif
-        //&music_ma_module,
+        &music_ma_module,
         NULL
 };
 
@@ -156,11 +156,13 @@ void I_InitSound(boolean use_sfx_prefix)
     // Initialize the sound and music subsystems.
     if (!nosound && !screensaver_mode)
     {
-        if (!nosfx)
+        if (!nosfx) {
             InitSfxModule(use_sfx_prefix);
+        }
 
-        if (!nomusic)
+        if (!nomusic) {
             InitMusicModule();
+        }
     }
 }
 
@@ -263,6 +265,13 @@ void *I_RegisterSong(void *data, int len)
 {
     if (music_module != NULL)
         return music_module->RegisterSong(data, len);
+    return NULL;
+}
+
+void *I_RegisterSongByName(char* name)
+{
+    if (music_module != NULL)
+        return music_module->RegisterSongByName(name);
     return NULL;
 }
 

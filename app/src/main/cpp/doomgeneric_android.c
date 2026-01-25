@@ -111,19 +111,19 @@ static void Movement(void) {
 
     int id1, id2, id3, id4;
 
-    if (pointer_touched_within_x_bound(100, true, &id1)) {
+    if (pointer_touched_within_x_bound(67, true, &id1)) {
         if (!left) { addKeyToQueue(1, KEY_LEFTARROW); left = true; }
     } else {
         if (left) { addKeyToQueue(0, KEY_LEFTARROW); left = false; }
     }
 
-    if (pointer_touched_within_x_bound(340, false, &id2)) {
+    if (pointer_touched_within_x_bound(387, false, &id2)) {
         if (!right) { addKeyToQueue(1, KEY_RIGHTARROW); right = true; }
     } else {
         if (right) { addKeyToQueue(0, KEY_RIGHTARROW); right = false; }
     }
 
-    if (pointer_touched_within_y_bound(100, true, &id3)) {
+    if (pointer_touched_within_y_bound(125, true, &id3)) {
         if (!forward) { addKeyToQueue(1, KEY_UPARROW); forward = true; }
     } else {
         if (forward) { addKeyToQueue(0, KEY_UPARROW); forward = false; }

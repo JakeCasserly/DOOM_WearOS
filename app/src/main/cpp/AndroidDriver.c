@@ -364,3 +364,10 @@ void android_main(struct android_app *app)
         doomgeneric_Create(1, argv);
     }
 }
+
+AAssetManager* GetAssetManager(void)
+{
+    if (gapp && gapp->activity)
+        return gapp->activity->assetManager;
+    return NULL;
+}

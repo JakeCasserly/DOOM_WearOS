@@ -159,6 +159,8 @@ typedef struct {
     // Returns a handle that can be used to play the song
     void *(*RegisterSong)(void *data, int len);
 
+    void *(*RegisterSongByName)(const char* name);
+
     // Un-register (free) song data
     void (*UnRegisterSong)(void *handle);
 
@@ -176,6 +178,7 @@ void I_SetMusicVolume(int volume);
 void I_PauseSong(void);
 void I_ResumeSong(void);
 void *I_RegisterSong(void *data, int len);
+void *I_RegisterSongByName(char* name);
 void I_UnRegisterSong(void *handle);
 void I_PlaySong(void *handle, boolean looping);
 void I_StopSong(void);
