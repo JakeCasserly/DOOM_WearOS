@@ -16,15 +16,22 @@ Android Studio
 
 ## Build instructions:
 
-The similations have been compiled and run within android studio. They are also done using the SDK with the latest API version 36 (as of current).
+The simulations have been compiled and run within android studio. They are also done using the SDK with the latest API version 36 (as of current).
 
 The device shown in the photos is Wear OS Large Round API 36 "Baklava" and is simulated with 750 MB RAM and 4 CPU cores.
 
+### Music
+
+In order to properly play sound tracks you must provide the appropriate .ogg files and place them within the /assets folder (same directory as the WAD file). This project does not make use of the MUS files within the provided WAD file.
+
+OGG files used in this project were found at https://sc55.duke4.net/games.php under the "Doom/Ultimate Doom" section.
+
 ## TODO:
 
-- Fix screen resolution.
-- Fixing joystick and buttons (which are temperamental to say the least).
-- Build and run performance test on real device
+- Fix screen resolution. (Complete)
+- Fixing joystick and buttons. (Joystick removed for more traditional tank controls, buttons work fine but slightly temperamental)
+- Build and run performance test on real device (Tested on Galaxy Watch 7, performs very well)
+- Implement music (Complete)
 
 ## References
 
