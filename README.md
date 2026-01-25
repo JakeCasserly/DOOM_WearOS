@@ -6,9 +6,8 @@ This is a port of the classic DOOM (1993) for wearable android device.
 
 If you want to try a different version (such as shareware version of DOOM you can find for free: *doom1.wad*) please replace with your own WAD file (game data) in the /assets folder.
 
-<img width="323" height="308" alt="Screenshot 2026-01-13 200229" src="https://github.com/user-attachments/assets/cb1ef65c-f7b2-438c-8a7c-7a7c2403e9db" />
-<img width="307" height="308" alt="Screenshot 2026-01-13 200244" src="https://github.com/user-attachments/assets/1f780da2-c49c-4c93-aeb0-0f97a1cdaed4" />
-<img width="306" height="308" alt="Screenshot 2026-01-13 200428" src="https://github.com/user-attachments/assets/ed2f4008-5e6c-4ab5-9846-2f6c021c073e" />
+<img width="323" height="325" alt="Screenshot 2026-01-13 200229" src="https://github.com/user-attachments/assets/17c06f05-84ed-4a30-9194-afb70bc80ab8" />
+<img width="307" height="340" alt="Screenshot 2026-01-13 200244" src="https://github.com/user-attachments/assets/09dc63cd-6873-4575-bc46-282373e5eca7" />
 
 ## Development and build environment:
 
